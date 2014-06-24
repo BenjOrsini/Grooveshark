@@ -87,8 +87,15 @@ def get_song_url_from_tinysong_base62(base62):
 
 
 def create_playlist(name, song_ids):
-    result = api_call('createPlaylist', {'name': name, 'songIDs': song_ids})
-    return result
+    return api_call('createPlaylist', {'name': name, 'songIDs': song_ids})
+
+
+def set_playlist_songs(playlist_id, song_ids):
+    return api_call('setPlaylistSongs', {'playlistID': playlist_id, 'songIDs': song_ids})
+
+
+def get_playlist(playlist_id, limit=10):
+    return api_call('getPlaylist', {'playlistID': playlist_id, 'limit': limit})
 
 
 def get_song_search_results(query, limit=10):
