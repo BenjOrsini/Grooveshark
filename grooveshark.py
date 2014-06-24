@@ -1,23 +1,29 @@
-import hashlib 
+import hashlib
 import hmac
-import urllib2
+from urllib import request
+
 import simplejson
 
-KEY = '' #fill in with your key
-SECRET = '' #fill in with your secret
+
+KEY = ''  # fill in with your key
+SECRET = ''  # fill in with your secret
 API_URL = 'https://api.grooveshark.com/ws3.php?sig='
 SESSION_ID = ''
+ENCODING = 'utf-8'
 country = {'ID': 221, 'CC1': 0, 'CC2': 0, 'CC3': 0, 'CC4': 0, 'DMA': 0, 'IPR': 0}
 
 def signature(data):
-    sig = hmac.new(SECRET, data)
+    secret_bytes = bytes(SECRET, encoding=ENCODING)
+    data_bytes = data.encode(encoding=ENCODING)
+    sig = hmac.new(secret_bytes, data_bytes)
     return sig.hexdigest()
 
 def user_token(username, password):
     token = hashlib.md5(username.lower() + hashlib.md5(password).hexdigest())
     return token.hexdigest()
 
-def api_call(method, parameters={}):
+
+def api_call(method, parameters=None):
     data = {}
     data['method'] = method
     data['parameters'] = parameters
@@ -26,9 +32,10 @@ def api_call(method, parameters={}):
         data['header']['sessionID'] = SESSION_ID
     
     data_str = simplejson.dumps(data)
+    data_bytes = data_str.encode(encoding=ENCODING)
     sig = signature(data_str)
-    req = urllib2.Request(API_URL+sig, data_str)
-    response = urllib2.urlopen(req).read()
+    req = request.Request(API_URL + sig, data=data_bytes)
+    response = request.urlopen(req).read()
     
     return simplejson.loads(response)
     
