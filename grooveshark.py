@@ -24,12 +24,12 @@ def user_token(username, password):
     return token.hexdigest()
 
 
-def api_call(method, parameters=None):
+def api_call(method, parameters=None, add_session_id=True):
     data = {}
     data['method'] = method
     data['parameters'] = parameters
     data['header'] = {'wsKey': KEY}
-    if method != 'startSession':
+    if add_session_id:
         data['header']['sessionID'] = SESSION_ID
     
     data_str = simplejson.dumps(data)
@@ -53,7 +53,7 @@ def init(key='', secret=''):
         global SECRET
         KEY = key
         SECRET = secret
-    response = api_call('startSession')    
+    response = api_call('startSession', add_session_id=False)
     if response['result']['success'] == True:
         global SESSION_ID
         SESSION_ID = response['result']['sessionID']
