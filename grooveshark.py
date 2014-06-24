@@ -19,7 +19,8 @@ def signature(data):
     return sig.hexdigest()
 
 def user_token(username, password):
-    token = hashlib.md5(username.lower() + hashlib.md5(password).hexdigest())
+    hash_pass = hashlib.md5(password.encode(ENCODING)).hexdigest()
+    token = hashlib.md5(str.encode(username.lower() + hash_pass, ENCODING))
     return token.hexdigest()
 
 
@@ -62,6 +63,16 @@ def authenticate_user(username, password):
         token = user_token(username, password)
         response = api_call('authenticateUser', {'username': username.lower(), 'token': token})
         return response
+
+
+def get_song_url_from_tinysong_base62(base62):
+    '''
+    :param base62: a base62 identifier fetched from http://www.tinysong.com/
+    :return: a response with the song url
+    '''
+    results = api_call('getSongURLFromTinysongBase62', {'base62': base62})
+    return results
+
 
 def get_song_search_results(query, limit=10):
     ''' Perform a song search '''
