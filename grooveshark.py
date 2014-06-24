@@ -37,7 +37,12 @@ def api_call(method, parameters=None):
     sig = signature(data_str)
     req = request.Request(API_URL + sig, data=data_bytes)
     response = request.urlopen(req).read()
-    
+
+    response_json = simplejson.loads(response)
+
+    if 'errors' in response_json:
+        raise APIError(simplejson.dumps(response_json['errors']))
+
     return simplejson.loads(response)
     
         
@@ -52,8 +57,6 @@ def init(key='', secret=''):
     if response['result']['success'] == True:
         global SESSION_ID
         SESSION_ID = response['result']['sessionID']
-    else:
-        raise APIError(simplejson.dumps(response['errors']))
         
 
 def authenticate_user(username, password):
@@ -65,13 +68,27 @@ def authenticate_user(username, password):
         return response
 
 
+def get_song_id_from_tinysong_base62(base62):
+    '''
+    :param base62: a base62 identifier fetched from http://www.tinysong.com/
+    :return: a response with the song id
+    '''
+    result = api_call('getSongIDFromTinysongBase62', {'base62': base62})
+    return result
+
+
 def get_song_url_from_tinysong_base62(base62):
     '''
     :param base62: a base62 identifier fetched from http://www.tinysong.com/
     :return: a response with the song url
     '''
-    results = api_call('getSongURLFromTinysongBase62', {'base62': base62})
-    return results
+    result = api_call('getSongURLFromTinysongBase62', {'base62': base62})
+    return result
+
+
+def create_playlist(name, song_ids):
+    result = api_call('createPlaylist', {'name': name, 'songIDs': song_ids})
+    return result
 
 
 def get_song_search_results(query, limit=10):
