@@ -5,123 +5,119 @@ from urllib import request
 import simplejson
 
 
-KEY = ''  # fill in with your key
-SECRET = ''  # fill in with your secret
-API_URL = 'https://api.grooveshark.com/ws3.php?sig='
-SESSION_ID = ''
-ENCODING = 'utf-8'
-country = {'ID': 221, 'CC1': 0, 'CC2': 0, 'CC3': 0, 'CC4': 0, 'DMA': 0, 'IPR': 0}
+class Grooveshark:
+    API_URL = 'https://api.grooveshark.com/ws3.php?sig='
+    ENCODING = 'utf-8'
+    COUNTRY = {'ID': 221, 'CC1': 0, 'CC2': 0, 'CC3': 0, 'CC4': 0, 'DMA': 0, 'IPR': 0}
 
-def signature(data):
-    secret_bytes = bytes(SECRET, encoding=ENCODING)
-    data_bytes = data.encode(encoding=ENCODING)
-    sig = hmac.new(secret_bytes, data_bytes)
-    return sig.hexdigest()
+    def __init__(self, key='', secret=''):
+        ''' Create session'''
+        if key and secret:
+            self.key = key
+            self.secret = secret
+        response = self.api_call('startSession', add_session_id=False)
+        if response['result']['success'] == True:
+            self.session_id = response['result']['sessionID']
 
-def user_token(username, password):
-    hash_pass = hashlib.md5(password.encode(ENCODING)).hexdigest()
-    token = hashlib.md5(str.encode(username.lower() + hash_pass, ENCODING))
-    return token.hexdigest()
+    def signature(self, data):
+        secret_bytes = bytes(self.secret, encoding=Grooveshark.ENCODING)
+        data_bytes = data.encode(encoding=Grooveshark.ENCODING)
+        sig = hmac.new(secret_bytes, data_bytes)
+        return sig.hexdigest()
 
-
-def api_call(method, parameters=None, add_session_id=True):
-    data = {}
-    data['method'] = method
-    data['parameters'] = parameters
-    data['header'] = {'wsKey': KEY}
-    if add_session_id:
-        data['header']['sessionID'] = SESSION_ID
-    
-    data_str = simplejson.dumps(data)
-    data_bytes = data_str.encode(encoding=ENCODING)
-    sig = signature(data_str)
-    req = request.Request(API_URL + sig, data=data_bytes)
-    response = request.urlopen(req).read()
-
-    response_json = simplejson.loads(response)
-
-    if 'errors' in response_json:
-        raise APIError(simplejson.dumps(response_json['errors']))
-
-    return simplejson.loads(response)
-    
-        
-def init(key='', secret=''):
-    ''' Create session'''
-    if key and secret:
-        global KEY
-        global SECRET
-        KEY = key
-        SECRET = secret
-    response = api_call('startSession', add_session_id=False)
-    if response['result']['success'] == True:
-        global SESSION_ID
-        SESSION_ID = response['result']['sessionID']
-        
-
-def authenticate_user(username, password):
-    if SESSION_ID == '':
-        raise Exception("You need to create a session before you authenticate that session with a username and password")
-    else:
-        token = user_token(username, password)
-        response = api_call('authenticateUser', {'username': username.lower(), 'token': token})
-        return response
+    def user_token(self, username, password):
+        hash_pass = hashlib.md5(password.encode(Grooveshark.ENCODING)).hexdigest()
+        token = hashlib.md5(str.encode(username.lower() + hash_pass, Grooveshark.ENCODING))
+        return token.hexdigest()
 
 
-def get_song_id_from_tinysong_base62(base62):
-    '''
-    :param base62: a base62 identifier fetched from http://www.tinysong.com/
-    :return: a response with the song id
-    '''
-    result = api_call('getSongIDFromTinysongBase62', {'base62': base62})
-    return result
+    def api_call(self, method, parameters=None, add_session_id=True):
+        data = {}
+        data['method'] = method
+        data['parameters'] = parameters
+        data['header'] = {'wsKey': self.key}
+        if add_session_id:
+            data['header']['sessionID'] = self.session_id
+
+        data_str = simplejson.dumps(data)
+        data_bytes = data_str.encode(encoding=Grooveshark.ENCODING)
+        sig = self.signature(data_str)
+        req = request.Request(Grooveshark.API_URL + sig, data=data_bytes)
+        response = request.urlopen(req).read()
+
+        response_json = simplejson.loads(response)
+
+        if 'errors' in response_json:
+            raise APIError(simplejson.dumps(response_json['errors']))
+
+        return simplejson.loads(response)
 
 
-def get_song_url_from_tinysong_base62(base62):
-    '''
-    :param base62: a base62 identifier fetched from http://www.tinysong.com/
-    :return: a response with the song url
-    '''
-    result = api_call('getSongURLFromTinysongBase62', {'base62': base62})
-    return result
+    def authenticate_user(self, username, password):
+        if self.session_id == '':
+            raise Exception(
+                "You need to create a session before you authenticate that session with a username and password")
+        else:
+            token = self.user_token(username, password)
+            response = self.api_call('authenticateUser', {'username': username.lower(), 'token': token})
+            return response
 
 
-def create_playlist(name, song_ids):
-    return api_call('createPlaylist', {'name': name, 'songIDs': song_ids})
+    def get_song_id_from_tinysong_base62(self, base62):
+        '''
+        :param base62: a base62 identifier fetched from http://www.tinysong.com/
+        :return: a response with the song id
+        '''
+        result = self.api_call('getSongIDFromTinysongBase62', {'base62': base62})
+        return result
 
 
-def set_playlist_songs(playlist_id, song_ids):
-    return api_call('setPlaylistSongs', {'playlistID': playlist_id, 'songIDs': song_ids})
+    def get_song_url_from_tinysong_base62(self, base62):
+        '''
+        :param base62: a base62 identifier fetched from http://www.tinysong.com/
+        :return: a response with the song url
+        '''
+        result = self.api_call('getSongURLFromTinysongBase62', {'base62': base62})
+        return result
 
 
-def get_playlist(playlist_id, limit=10):
-    return api_call('getPlaylist', {'playlistID': playlist_id, 'limit': limit})
+    def create_playlist(self, name, song_ids):
+        return self.api_call('createPlaylist', {'name': name, 'songIDs': song_ids})
 
 
-def get_song_search_results(query, limit=10):
-    ''' Perform a song search '''
-    results = api_call('getSongSearchResults', {'query': query, 'country':country, 'limit': limit})
-    return results
+    def set_playlist_songs(self, playlist_id, song_ids):
+        return self.api_call('setPlaylistSongs', {'playlistID': playlist_id, 'songIDs': song_ids})
 
-def get_stream_key_stream_server(songID):
-    ''' Get stream URL from songID '''
-    results = api_call('getStreamKeyStreamServer', {'songID': songID, 'country':country})
-    return results
 
-def get_stream_from_query(query):
-    ''' Get stream URL of the most popular song from query '''
-    results = get_song_search_results(query)
-    songs = results['result']['songs']
-    if len(songs) == 0:
-        return None, None, None
-    
-    song = songs[0]
-    songID = song['SongID']
-    artistName = song['ArtistName']
-    songName = song['SongName']
-    results = get_stream_key_stream_server(songID)
-    url = results['result']['url']
-    return url, artistName, songName
+    def get_playlist(self, playlist_id, limit=10):
+        return self.api_call('getPlaylist', {'playlistID': playlist_id, 'limit': limit})
+
+
+    def get_song_search_results(self, query, limit=10):
+        ''' Perform a song search '''
+        results = self.api_call('getSongSearchResults',
+                                {'query': query, 'country': Grooveshark.COUNTRY, 'limit': limit})
+        return results
+
+    def get_stream_key_stream_server(self, songID):
+        ''' Get stream URL from songID '''
+        results = self.api_call('getStreamKeyStreamServer', {'songID': songID, 'country': Grooveshark.COUNTRY})
+        return results
+
+    def get_stream_from_query(self, query):
+        ''' Get stream URL of the most popular song from query '''
+        results = self.get_song_search_results(query)
+        songs = results['result']['songs']
+        if len(songs) == 0:
+            return None, None, None
+
+        song = songs[0]
+        songID = song['SongID']
+        artistName = song['ArtistName']
+        songName = song['SongName']
+        results = self.get_stream_key_stream_server(songID)
+        url = results['result']['url']
+        return url, artistName, songName
 
 class APIError(Exception):
     
