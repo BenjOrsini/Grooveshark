@@ -53,6 +53,29 @@ class Grooveshark:
         return simplejson.loads(response)
 
 
+    ############CORE#################
+
+    def add_user_library_songs_ex(self, song_ids):
+        return self.api_call('addUserLibrarySongsEx', {'songIDs': song_ids})
+
+    def get_user_library_songs(self, page=1, limit=10):
+        return self.api_call('getUserLibrarySongs', {'limit': limit, 'page': page})
+
+    def removeUserLibrarySongs(self, song_ids, album_ids, artist_ids):
+        return self.api_call('removeUserLibrarySongs', {'songIDs': song_ids, 'albumIDs': album_ids, 'artistIDs':artist_ids})
+
+    def getUserPlaylistsSubscribed(self):
+        return self.api_call('getUserPlaylistsSubscribed')
+
+    def getUserPlaylists(self):
+        return self.api_call('getUserPlaylists')
+
+    def delete_playlist(self, playlist_id):
+        return self.api_call('deletePlaylist', {'playlistID':playlist_id})
+
+    def getUserPlaylistsByUserID(self):
+        return self.api_call('getUserPlaylistsByUserID')
+
     def authenticate_user(self, username, password):
         if self.session_id == '':
             raise Exception(
@@ -92,6 +115,8 @@ class Grooveshark:
     def get_playlist(self, playlist_id, limit=10):
         return self.api_call('getPlaylist', {'playlistID': playlist_id, 'limit': limit})
 
+    def get_playlist_info(self, playlist_id):
+        return self.api_call('getPlaylistInfo', {'playlistID': playlist_id})
 
     def get_song_search_results(self, query, limit=10):
         ''' Perform a song search '''
