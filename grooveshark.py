@@ -3,12 +3,14 @@ import hmac
 from urllib import request
 
 import simplejson
+from grooveshark import Grooveshark
 
 
 class Grooveshark:
     API_URL = 'https://api.grooveshark.com/ws3.php?sig='
     ENCODING = 'utf-8'
     COUNTRY = {'ID': 221, 'CC1': 0, 'CC2': 0, 'CC3': 0, 'CC4': 0, 'DMA': 0, 'IPR': 0}
+    LIMIT = 10
 
     def __init__(self, key='', secret=''):
         ''' Create session'''
@@ -61,19 +63,50 @@ class Grooveshark:
     def get_user_library_songs(self, page=1, limit=10):
         return self.api_call('getUserLibrarySongs', {'limit': limit, 'page': page})
 
-    def removeUserLibrarySongs(self, song_ids, album_ids, artist_ids):
+    def remove_user_library_songs(self, song_ids, album_ids, artist_ids):
         return self.api_call('removeUserLibrarySongs', {'songIDs': song_ids, 'albumIDs': album_ids, 'artistIDs':artist_ids})
 
-    def getUserPlaylistsSubscribed(self):
+    def get_user_playlists_subscribed(self):
         return self.api_call('getUserPlaylistsSubscribed')
 
-    def getUserPlaylists(self):
+    def get_user_playlists(self):
         return self.api_call('getUserPlaylists')
+
+    def remove_user_favorite_songs(self, song_ids):
+        return self.api_call('removeUserFavoriteSongs', {'songIDs': song_ids})
+
+    def logout(self, song_ids):
+        return self.api_call('logout')
+
+    def authenticate_token(self, token):
+        return self.api_call('authenticateToken', {'token': token})
+
+    def get_user_info(self):
+        return self.api_call('getUserInfo')
+
+    def get_user_subscription_details(self):
+        return self.api_call('getUserSubscriptionDetails')
+
+    def add_user_favorite_song(self, song_id):
+        return self.api_call('addUserFavoriteSong', {'songID': song_id})
+
+    def subscribe_playlist(self, playlist_id):
+        return self.api_call('subscribePlaylist', {'playlistID': playlist_id})
+
+    def unsubscribe_playlist(self, playlist_id):
+        return self.api_call('unsubscribePlaylist', {'playlistID': playlist_id})
+
+    def get_country(self, ip):
+        return self.api_call('getCountry', {'ip': ip})
+
+    def get_playlist_info(self, playlist_id):
+        return self.api_call('getPlaylistInfo', {'playlistID': playlist_id})
+
 
     def delete_playlist(self, playlist_id):
         return self.api_call('deletePlaylist', {'playlistID':playlist_id})
 
-    def getUserPlaylistsByUserID(self):
+    def get_user_playlists_by_user_id(self):
         return self.api_call('getUserPlaylistsByUserID')
 
     def authenticate_user(self, username, password):
@@ -112,13 +145,12 @@ class Grooveshark:
         return self.api_call('setPlaylistSongs', {'playlistID': playlist_id, 'songIDs': song_ids})
 
 
-    def get_playlist(self, playlist_id, limit=10):
+    def get_playlist(self, playlist_id, limit=Grooveshark.LIMIT):
         return self.api_call('getPlaylist', {'playlistID': playlist_id, 'limit': limit})
 
-    def get_playlist_info(self, playlist_id):
-        return self.api_call('getPlaylistInfo', {'playlistID': playlist_id})
 
-    def get_song_search_results(self, query, limit=10):
+
+    def get_song_search_results(self, query, limit=Grooveshark.LIMIT):
         ''' Perform a song search '''
         results = self.api_call('getSongSearchResults',
                                 {'query': query, 'country': Grooveshark.COUNTRY, 'limit': limit})
