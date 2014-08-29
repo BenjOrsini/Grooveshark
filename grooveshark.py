@@ -3,8 +3,6 @@ import hmac
 from urllib import request
 
 import simplejson
-from grooveshark import Grooveshark
-
 
 class Grooveshark:
     API_URL = 'https://api.grooveshark.com/ws3.php?sig='
@@ -57,9 +55,14 @@ class Grooveshark:
         return simplejson.loads(response)
 
 
-    ############CORE#################
+    ############API#################
 
     def add_user_favorite_song(self, song_id):
+        '''
+        Add a favorite song for a user. Must provide a logged-in sessionID.
+        :param song_id:
+        :return:
+        '''
         return self.api_call('addUserFavoriteSong', {'songID': song_id})
 
     def add_user_library_songs_ex(self, song_ids):
@@ -86,11 +89,53 @@ class Grooveshark:
     def get_country(self, ip):
         return self.api_call('getCountry', {'ip': ip})
 
-    def get_playlist(self, playlist_id, limit=Grooveshark.LIMIT):
+    def get_playlist(self, playlist_id, limit=LIMIT):
         return self.api_call('getPlaylist', {'playlistID': playlist_id, 'limit': limit})
 
     def get_playlist_info(self, playlist_id):
         return self.api_call('getPlaylistInfo', {'playlistID': playlist_id})
+
+    def get_song_id_from_tinysong_base62(self, base62):
+        '''
+        :param base62: a base62 identifier fetched from http://www.tinysong.com/
+        :return: a response with the song id
+        '''
+        result = self.api_call('getSongIDFromTinysongBase62', {'base62': base62})
+        return result
+
+    def get_song_search_results(self, query, limit=LIMIT):
+        ''' Perform a song search '''
+        results = self.api_call('getSongSearchResults',
+                                {'query': query, 'country': Grooveshark.COUNTRY, 'limit': limit})
+        return results
+
+    def get_song_url_from_tinysong_base62(self, base62):
+        '''
+        :param base62: a base62 identifier fetched from http://www.tinysong.com/
+        :return: a response with the song url
+        '''
+        result = self.api_call('getSongURLFromTinysongBase62', {'base62': base62})
+        return result
+
+    def get_stream_from_query(self, query):
+        ''' Get stream URL of the most popular song from query '''
+        results = self.get_song_search_results(query)
+        songs = results['result']['songs']
+        if len(songs) == 0:
+            return None, None, None
+
+        song = songs[0]
+        songID = song['SongID']
+        artistName = song['ArtistName']
+        songName = song['SongName']
+        results = self.get_stream_key_stream_server(songID)
+        url = results['result']['url']
+        return url, artistName, songName
+
+    def get_stream_key_stream_server(self, songID):
+        ''' Get stream URL from songID '''
+        results = self.api_call('getStreamKeyStreamServer', {'songID': songID, 'country': Grooveshark.COUNTRY})
+        return results
 
     def get_user_info(self):
         return self.api_call('getUserInfo')
@@ -155,25 +200,6 @@ class Grooveshark:
 
 
 
-    ############URLS#################
-
-    def get_song_url_from_tinysong_base62(self, base62):
-        '''
-        :param base62: a base62 identifier fetched from http://www.tinysong.com/
-        :return: a response with the song url
-        '''
-        result = self.api_call('getSongURLFromTinysongBase62', {'base62': base62})
-        return result
-
-    ############TINYSONG#################
-
-    def get_song_id_from_tinysong_base62(self, base62):
-        '''
-        :param base62: a base62 identifier fetched from http://www.tinysong.com/
-        :return: a response with the song id
-        '''
-        result = self.api_call('getSongIDFromTinysongBase62', {'base62': base62})
-        return result
 
 
 
@@ -187,31 +213,10 @@ class Grooveshark:
 
 
 
-    def get_song_search_results(self, query, limit=Grooveshark.LIMIT):
-        ''' Perform a song search '''
-        results = self.api_call('getSongSearchResults',
-                                {'query': query, 'country': Grooveshark.COUNTRY, 'limit': limit})
-        return results
 
-    def get_stream_key_stream_server(self, songID):
-        ''' Get stream URL from songID '''
-        results = self.api_call('getStreamKeyStreamServer', {'songID': songID, 'country': Grooveshark.COUNTRY})
-        return results
 
-    def get_stream_from_query(self, query):
-        ''' Get stream URL of the most popular song from query '''
-        results = self.get_song_search_results(query)
-        songs = results['result']['songs']
-        if len(songs) == 0:
-            return None, None, None
 
-        song = songs[0]
-        songID = song['SongID']
-        artistName = song['ArtistName']
-        songName = song['SongName']
-        results = self.get_stream_key_stream_server(songID)
-        url = results['result']['url']
-        return url, artistName, songName
+
 
 class APIError(Exception):
     

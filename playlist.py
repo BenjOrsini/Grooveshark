@@ -83,7 +83,7 @@ def main(argv):
         print('Authenticating user.')
         g.authenticate_user(login, password)
 
-        ws_result = g.getUserPlaylists()
+        ws_result = g.get_user_playlists()
 
         playlists_with_same_name = []
         for pl in ws_result['result']['playlists']:
